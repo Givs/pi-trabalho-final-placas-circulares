@@ -1,0 +1,25 @@
+# Ambiente virtual Python
+.venv/
+venv/
+env/
+
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Resultados gerados (podem ser recriados rodando o notebook)
+results/
