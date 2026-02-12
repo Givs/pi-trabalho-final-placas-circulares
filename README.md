@@ -1,6 +1,6 @@
 # Detecção de Placas de Trânsito Circulares
 
-Trabalho final da disciplina de **Processamento de Imagens** — detecção automática de placas de trânsito circulares com borda vermelha em imagens reais, utilizando exclusivamente técnicas clássicas de PI.
+Trabalho final da disciplina de **Processamento de Imagens** — detecção automática de placas de trânsito circulares com borda vermelha em imagens reais.
 
 ## 🎥 Vídeo de apresentação
 
@@ -137,13 +137,6 @@ Isso permitiria rejeitar contraexemplos como triângulos de sinalização vermel
    ```
 
 5. Execute todas as células sequencialmente. Os resultados serão salvos em `results/debug_images/`.
-
-## Restrições atendidas
-
-- ✅ Sem OpenCV
-- ✅ Sem PIL / Pillow
-- ✅ Sem aprendizado de máquina
-- ✅ Apenas `numpy`, `matplotlib`, `scikit-image` e biblioteca padrão do Python
 
 ## Autor
 
