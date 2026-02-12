@@ -13,7 +13,8 @@ Dado uma imagem de entrada contendo (ou não) uma placa de trânsito circular co
 1. Segmentar as regiões vermelhas da imagem.
 2. Isolar componentes conectados candidatos a placa.
 3. Aplicar a Transformada Circular de Hough (CHT) em cada componente.
-4. Selecionar o círculo com maior evidência (score) como resultado.
+4. Refinar e validar geometricamente o melhor círculo de cada componente.
+5. Selecionar o melhor círculo aprovado como resultado final.
 
 ## Pipeline de processamento
 
@@ -39,7 +40,13 @@ Transformada Circular de Hough (CHT) por componente
   (faixa de raios adaptativa ao tamanho do componente)
     │
     ▼
-Seleção do melhor círculo (maior score da CHT)
+Refino local do melhor círculo (pequenos ajustes em centro e raio)
+    │
+    ▼
+Validação geométrica (cobertura_perimetro + radial_cv)
+    │
+    ▼
+Seleção do melhor círculo aprovado (maior score)
     │
     ▼
 Visualização de debug (6 subplots + acumulador CHT por componente)
@@ -57,7 +64,25 @@ Visualização de debug (6 subplots + acumulador CHT por componente)
 
 5. **CHT por componente** — para cada componente, extrai bordas por `máscara XOR erosão(máscara)` e aplica a Transformada Circular de Hough com faixa de raios proporcional ao raio equivalente do componente (0.55× a 1.35×). O espaço acumulador 3D (centro_x, centro_y, raio) vota nos centros mais prováveis.
 
-6. **Seleção por score** — dentre todos os círculos detectados, o de maior score (mais votos no acumulador) é selecionado como resultado final.
+6. **Refino local do círculo** — após escolher o melhor pico da CHT no componente, o algoritmo testa pequenas variações de centro e raio (janela local) para corrigir desalinhamentos leves. O critério de escolha prioriza maior aderência geométrica da borda ao círculo.
+
+7. **Validação geométrica simples** — o círculo refinado é aceito apenas se passar em dois critérios:
+   - **Cobertura por perímetro** (`cobertura_perimetro`): fração de pixels de borda próximos ao perímetro esperado do círculo (`2πr`), com tolerância radial.
+   - **Dispersão radial** (`radial_cv`): coeficiente de variação das distâncias dos pixels de borda ao centro do círculo. Quanto menor, mais circular é o componente.
+
+   Critério atual de aprovação:
+   - `cobertura_perimetro >= 0.40`
+   - `radial_cv <= 0.20`
+
+8. **Seleção por score** — entre os candidatos aprovados na validação, o de maior score da CHT é retornado como resultado final.
+
+### Parâmetros de validação (implementação atual)
+
+- `tolerancia_borda = 3.0`
+- `cobertura_borda_minima = 0.40` (aplicada como `cobertura_perimetro`)
+- `radial_cv_maximo = 0.20`
+- `janela_refino_centro = 3` (±3 px)
+- `janela_refino_raio = 3` (±3 px)
 
 ## Técnicas utilizadas
 
@@ -68,21 +93,25 @@ Visualização de debug (6 subplots + acumulador CHT por componente)
 | Limpeza da máscara | Abertura e fechamento morfológico | `skimage.morphology.opening/closing` |
 | Separação de regiões | Componentes conectados (conectividade-8) | `skimage.measure.label + regionprops` |
 | Detecção de círculos | Transformada Circular de Hough (CHT) | `skimage.transform.hough_circle` |
-| Visualização | Debug multi-painel + heatmap do acumulador | `matplotlib` |
+| Refino geométrico | Busca local no melhor círculo da CHT | `refinar_circulo_por_borda()` |
+| Validação geométrica | `cobertura_perimetro` + `radial_cv` | `calcular_metricas_circulo_borda()` |
+| Visualização | Debug multi-painel + heatmap do acumulador + métricas | `matplotlib` |
 
 ## Limitações e possíveis melhorias
 
-O pipeline atual **não realiza pós-processamento** para validar se o círculo retornado pela CHT realmente corresponde a uma placa circular. A CHT sempre retorna picos no acumulador, mesmo para componentes que não são circulares (por exemplo, faixas vermelhas retangulares, partes de letreiros, objetos vermelhos genéricos). Isso significa que:
+O pipeline atual **já realiza pós-processamento geométrico** para reduzir falsos positivos da CHT. Ainda assim, existem limitações práticas:
 
-- **Falsos positivos são possíveis**: qualquer região vermelha com tamanho suficiente receberá um "melhor círculo", mesmo que a forma real não seja circular.
-- **A filtragem depende da qualidade da segmentação**: se a segmentação HSV isolar bem apenas as bordas de placas, os componentes já são bons candidatos. Caso contrário, componentes espúrios podem gerar resultados incorretos.
+- **Limiar fixo por dataset** — os thresholds de HSV, morfologia e validação geométrica podem exigir ajuste ao mudar iluminação, câmera ou tipo de imagem.
+- **Sensível a oclusão e cortes severos** — quando a borda vermelha está incompleta, o `radial_cv` pode aumentar e a cobertura cair, gerando rejeição.
+- **Deformações de perspectiva** — placas muito inclinadas podem parecer elipses, reduzindo a aderência ao modelo circular.
+- **Objetos vermelhos circulares não placa** — o método detecta circularidade geométrica, não o significado semântico da placa.
 
-Uma melhoria natural seria adicionar uma **etapa de pós-processamento / validação geométrica** que verificasse, por exemplo:
-- Se a forma do componente é de fato circular (circularidade, cobertura angular).
-- Se o raio detectado pela CHT é compatível com o tamanho real do componente.
-- Se os pixels do componente estão distribuídos ao longo do perímetro do círculo (cobertura de borda).
+Melhorias futuras possíveis:
 
-Isso permitiria rejeitar contraexemplos como triângulos de sinalização vermelhos, faixas de texto ou objetos vermelhos não circulares que eventualmente passem pela segmentação.
+- Ajuste automático de limiares por estatística da própria imagem.
+- Inclusão de métricas adicionais (por exemplo, cobertura angular explícita).
+- Correção de perspectiva antes da validação circular.
+- Etapa opcional de reconhecimento do conteúdo interno da placa (ex.: velocidade), caso o escopo permita.
 
 ## Estrutura do repositório
 
