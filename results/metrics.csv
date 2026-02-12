@@ -1,0 +1,6 @@
+image_path,n_components,n_circles_raw,n_circles_detected,best_circle_score,best_border_coverage,best_angular_coverage,best_radial_cv,best_filled_circularity,execution_ms,detected
+data/Captura de tela de 2026-02-08 12-31-38.png,1,3,0,,,,,,280.2326789969811,False
+data/img01.jpg,1,3,1,0.30555555555555663,0.9212754750617884,1.0,0.10090280471109335,0.7905366293779662,1087.1359470038442,True
+data/img02.jpg,1,3,0,,,,,,448.33704199118074,False
+data/machado_1.jpg,4,12,1,0.3312499999999993,0.9869109947643979,1.0,0.10079609645774334,0.795861236658445,1794.8267250030767,True
+data/machado_2.jpg,2,6,0,,,,,,196.9169200019678,False
