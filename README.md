@@ -4,7 +4,7 @@ Trabalho final da disciplina de **Processamento de Imagens** — detecção auto
 
 ## 🎥 Vídeo de apresentação
 
-> **Link:** <!-- COLE O LINK DO YOUTUBE AQUI -->
+> **Link:** https://youtu.be/-NdLZKekGn8
 
 ## Objetivo
 
